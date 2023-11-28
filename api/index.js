@@ -14,7 +14,7 @@ app.use(passport.initialize());
 const jwt = require('jsonwebtoken');
 
 mongoose.connect(
-    "mongodb+srv://patrickcharlestz:971997Abcdef.@cluster0.plooqwi.mongodb.net/",
+    "mongodb+srv://patrickcharlestz:971997Abcdef.@cluster0.plooqwi.mongodb.net/social-messanger",
     {
         useNewUrlParser: true,
         useUnifiedTopology:true,
@@ -33,7 +33,7 @@ const Message = require("./models/message");
 
 app.post('/register',(req,res)=>{
     const {name,email,password,image} = req.body;
-    const newUser = new User(name,email,password,image);
+    const newUser = new User({ name,email,password,image });
     newUser.save().then(()=>{
         res.status(200).json({'message':'User Registered Successfully'});
     }).catch((err)=>{
