@@ -31,6 +31,7 @@ app.listen(port, () => {
 const User = require("./models/user");
 const Message = require("./models/message");
 
+//endpoint for registration of User
 app.post('/register',(req,res)=>{
     const {name,email,password,image} = req.body;
     const newUser = new User({ name,email,password,image });
@@ -39,5 +40,35 @@ app.post('/register',(req,res)=>{
     }).catch((err)=>{
         console.log('Error Registered User',err);
         res.status(500).json({'message':'Error Registering User'})
+    })
+})
+
+// function to create a Token based on user
+const createToken = (userId) => {
+    //set the token payload
+    const payload = {
+        userId: userId,
+    };
+        //generate a token key with secret key and expiration time
+        const token = jwt.sign(payload, "Q$r2K6W*n!jCW%Zk", { expiresIn: "1h"});
+        return token;
+    }
+
+//endpoint for login of user
+app.post("/login", (req,res) => {
+    const {email,password} = req.body;
+
+    //check if the email and password are provided
+    if(!email || !password){
+        return res.status(400).json({message:"Email and the password are required"})
+    }
+    // compare the provided passwords with the password in the database
+    if (user.password !== password){
+        return res.status(404).json({message:"Invalid Password"})
+    }
+    const token = createToken(user._id);
+    res.status(200).json({token}).catch((error) => {
+        console.log("error in finding the user", error);
+        res.status(500).json({messsage:"Internal Server Error!"})
     })
 })
