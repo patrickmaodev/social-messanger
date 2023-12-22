@@ -3,10 +3,10 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const localStrategy = require('passport-local').Strategy;
-
 const app = express();
 const port = 8000;
 const cors = require('cors');
+
 app.use(cors());
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
@@ -54,21 +54,43 @@ const createToken = (userId) => {
         return token;
     }
 
-//endpoint for login of user
-app.post("/login", (req,res) => {
-    const {email,password} = req.body;
+    app.post("/login", (req, res) => {
+        const { email, password } = req.body;
+    
+        // check if the email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and the password are required" });
+        }
+    
+        // find the user based on the provided email
+        User.findOne({ email })
+            .then(user => {
+                // check if user exists
+                if (!user) {
+                    return res.status(404).json({ message: "User not found" });
+                }
+    
+                // compare the provided password with the password in the database
+                if (user.password !== password) {
+                    return res.status(401).json({ message: "Invalid Password" });
+                }
+    
+                // create and send a token
+                const token = createToken(user._id);
+                res.status(200).json({ token });
+            })
+            .catch(error => {
+                console.log("Error in finding the user", error);
+                res.status(500).json({ message: "Internal Server Error!" });
+            });
+    });
 
-    //check if the email and password are provided
-    if(!email || !password){
-        return res.status(400).json({message:"Email and the password are required"})
-    }
-    // compare the provided passwords with the password in the database
-    if (user.password !== password){
-        return res.status(404).json({message:"Invalid Password"})
-    }
-    const token = createToken(user._id);
-    res.status(200).json({token}).catch((error) => {
-        console.log("error in finding the user", error);
-        res.status(500).json({messsage:"Internal Server Error!"})
-    })
-})
+    //endpoint to access all the users except the user who is currently logged in
+    app.get("/users/:userId", (req,res) => {
+        const loggedInUserId = req.params.userId;
+        user.find({_id:{$no: loggedInUSerId}}).then((users) => {
+        }).catch((err) => {
+            console.log("Error retrieving users", err);
+            res.status(500).json({message:"Error retrieving users"})
+        })
+    });
