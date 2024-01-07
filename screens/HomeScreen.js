@@ -1,16 +1,16 @@
-import React  from 'react'
+import React from 'react'
 import { StyleSheet, Text, View } from 'react-native';
-import { useContext,useLayoutEffect, useState } from 'react';
-import {Ionicons} from '@react-navigation/native';
-import {useNavigation} from '@react-navigation/native'
-import {MaterialIcons} from '@expo/vector-icons';
-import {UserType} from '../UserContext'
+import { useContext, useLayoutEffect, useState } from 'react';
+import { Ionicons } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native'
+import { MaterialIcons } from '@expo/vector-icons';
+import { UserType } from '../UserContext'
 
 
 const HomeScreen = () => {
 
   const navigation = useNavigation();
-  const {userId, setUserId} = useContext(UserType)
+  const { userId, setUserId } = useContext(UserType)
   const [users, seUsers] = useState([]);
 
   useLayoutEffect(() => {
@@ -22,12 +22,12 @@ const HomeScreen = () => {
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Ionicons name="chatbox-ellipses-outline" size={24} color="black" />
-          <MaterialIcons name="people-outline" size={24} color="black" />
+          <MaterialIcons onPress={() => navigation.navigate("Friends")} name="people-outline" size={24} color="black" />
         </View>
       )
     })
   }, []);
-  
+
   useFocusEffect(() => {
     const fetchUsers = async () => {
       const token = await AsyncStorage.getItem("authToken");
@@ -45,9 +45,9 @@ const HomeScreen = () => {
   console.log('users', users);
   return (
     <View>
-      <View style={{padding:10}}>
+      <View style={{ padding: 10 }}>
         {users.map((item, index) => (
-            <User key={index} item={item} />
+          <User key={index} item={item} />
         ))}
       </View>
       <Text>HomeScreen</Text>

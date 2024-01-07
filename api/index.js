@@ -94,3 +94,34 @@ const createToken = (userId) => {
             res.status(500).json({message:"Error retrieving users"})
         })
     });
+
+    //endpoint to send the request to user
+    app.post("/friend-request", async (req, res) => {
+        const { currentUserId, selectedUserId } = req.body;
+        try {
+            //update the recipient friend request []
+            await User.findByIdAndUpdate(selectedUserId, {
+                $push:{friendRequests : currentUserId },
+            });
+            //update the sender sent friend request []
+            await User.findByIdAndUpdate(currentUserId, {
+                $push: {sentFriendRequests, selectedUserId },
+            });
+            res.sendStatus(200);
+        } catch(error){
+            res.sendStatus(500);
+        }
+    });
+
+    //endpoint to show end point request of user
+    app.get("/friend-request/:userId", async (req, res) => {
+        try{
+            const userId = req.params;
+            //fetch user document based on userId
+            const user = await User.findById(userId).populate("friendsRequests", "name", "email", "image").lean();
+            const friendRequests = user.friendRequests;
+        }catch(err){
+            console.log(error);
+            res.status(500).json({messsage: "Internal Server Error"})
+        }
+    })
