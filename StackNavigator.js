@@ -6,6 +6,8 @@ import LoginScreen from './screens/LoginScreen'
 import RegisterScreen from './screens/RegisterScreen'
 import HomeScreen from './screens/HomeScreen'
 import FriendScreen from './screens/FriendScreen'
+import ChatScreen from './screens/ChatScreen'
+import ChatMessageScreen from './screens/ChatMessageScreen'
 
 const StackNavigator = () => {
     const Stack = createNativeStackNavigator();
@@ -27,6 +29,14 @@ const StackNavigator = () => {
         <Stack.Screen
           name="Friends"
           component={FriendScreen}
+          options={{headerShown:false}}/>
+        <Stack.Screen
+          name="Chats"
+          component={ChatScreen}
+          options={{headerShown:false}}/>
+        <Stack.Screen
+          name="Messages"
+          component={ChatMessageScreen}
           options={{headerShown:false}}/>
       </Stack.Navigator>
     </NavigationContainer>

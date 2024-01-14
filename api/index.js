@@ -125,3 +125,52 @@ const createToken = (userId) => {
             res.status(500).json({messsage: "Internal Server Error"})
         }
     })
+
+    //end point to accept a friend request of a person
+    app.post("/friend-request/accept", async(req, res) => {
+
+        try {
+
+            const {senderId, recipientId} = req.body;
+
+            //retrieve the documents of sender and the recipient
+            const sender = await User.findById(senderId);
+            const recipient = await User.findById(recipientId);
+    
+            sender.friends.push(recipientId);
+            recipient.push(senderId);
+    
+            recipient.friendRequests = recipient.friendRequests.filter(
+                (request) => request.toString() !== senderId.toString()
+            );
+    
+            sender.sentFriendRequests = sender.sentFriendRequests.filter((request) => request.toString() !== recipient.toString());
+    
+            await sender.save();
+            await recipient.save();
+    
+            res.status(200).json({message: "Friend Request accepted Successfully"});
+
+        }catch(error){
+            console.log(error);
+            res.status(500).json({ message: "Internal Server Error"});
+        }
+    });
+
+    //endpoint to access all the friends of the logged in user
+    app.get("/accepted-friends/:userId",async(req,res) => {
+
+        try {
+            const {userId} = req.params;
+            const user = await User.findbyId(userId).populate(
+                "friends",
+                "name email image"
+            )
+            const acceptedFriends = user.friends;
+            res.json(acceptedFriends)
+
+        }catch(error){
+            console.log(error);
+            res.status(500).json({message:"Internal server error"})
+        }
+    })
