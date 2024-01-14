@@ -120,12 +120,12 @@ const createToken = (userId) => {
             //fetch user document based on userId
             const user = await User.findById(userId).populate("friendsRequests", "name", "email", "image").lean();
             const friendRequests = user.friendRequests;
-        }catch(err){
+        }catch(error){
             console.log(error);
             res.status(500).json({messsage: "Internal Server Error"})
         }
     })
-
+ 
     //end point to accept a friend request of a person
     app.post("/friend-request/accept", async(req, res) => {
 
@@ -172,5 +172,75 @@ const createToken = (userId) => {
         }catch(error){
             console.log(error);
             res.status(500).json({message:"Internal server error"})
+        }
+    });
+
+    const multer = require('multer');
+
+    //configure multer for handling file uploads
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb){
+            //specify the desired destination folder
+            cb(null, 'files/');
+        },
+        filename: function (req, file, cb){
+            //generate unique for the upload file
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, uniqueSuffix + '-' + file.originalname);
+        },
+    }); 
+
+    const upload = multer({ Storage: storage});
+
+    //endpoint to post Messages and store it in backend
+    app.post("/messages", upload.single("imageFile"), async (req, res) => {
+        try{
+            const { senderId, recipientId, messageType, messageText } = req.body;
+            const newMessage = new Message({
+                senderId,
+                recipientId,
+                messageType,
+                message: messageText,
+                timestamp: new Date(),
+                imageUrl: messageType === "image" ? req.file.path : null,
+            });
+             
+            await newMessage.save();
+
+            res.status(200).json({ message: "Message sent successfully" });
+        } catch (error){
+            console.log(error);
+            res.status(500).json({ error: "Internal Server Error"});
+        }
+    })
+    //endpoint to get the user details to design the chat header
+    app.get('/user/userId', async(req, res) => {
+        try{
+            const {userId} = rq.params;
+
+            //fetch user data from user id
+            const recipientId = await User.fimdById(userId);
+            res.json(recipientId)
+        }catch(error){
+            console.log(error);
+            res.status(500).json({ error: "Internal Server Error"});
+        }
+    })
+
+    //endpoint to fetch the messages between two user in chart-room
+    app.get("/messages/:senderId/:recipientId", async(req, res) => {
+        try{
+            const {senderId, recipientId} = req.psrsms;
+
+            const messages = await Message.find({
+                $or: [
+                    { senderIdk: senderId, recipientId: recipientId },
+                    { senderId: senderId, recipientId: recipientId },
+                ],
+            }).populate("senderId","_id name");
+
+        }catch(error){
+            console.log(error);
+            res.status(500).json({ error: "Internal Serever Error"});
         }
     })
