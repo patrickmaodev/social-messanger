@@ -243,4 +243,20 @@ const createToken = (userId) => {
             console.log(error);
             res.status(500).json({ error: "Internal Serever Error"});
         }
-    })
+    });
+
+    //endpoint to  delete the messages
+    app.post("/deleteMessages/", async(req, res) => {
+        try{
+            const {messages} = req.body;
+            if(!Array.isArray(messages) || messages.length === 0){
+                return res.status(400).json({message: "invalid request body!"});
+            }
+
+            await Message.deleteMany({_id:{$in:messages}});
+            res.json({message: "message deleted successfully"});
+
+        } catch(error){
+            res.status.json("Internal Server Error");
+        }
+    });

@@ -4,6 +4,8 @@ import { Image } from 'react-native';
 import { Entypo, Ionicons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import EmojiSelector from 'react-native-emoji-selector';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from "expo-image-picker";
@@ -11,6 +13,7 @@ import * as ImagePicker from "expo-image-picker";
 const ChatMessageScreen = () => {
     const [showEmojiSelector, setShowEmojiSelector] = useState(false);
     const route = useRoute();
+    const [selectedMessages, setSelectedMessages] = useState("");
     const [messages, setMessages] = useState([]);
     const [recipientData, setRecipientData] = useState("");
     const navigation = useNavigation();
@@ -81,7 +84,7 @@ const ChatMessageScreen = () => {
             console.log("error in sending the message", error);
         }
     };
-    console.log("messages", messages);
+    console.log("messages", selectedMessages);
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "",
@@ -91,8 +94,13 @@ const ChatMessageScreen = () => {
                     alignItems: "center",
                     gap: 10
                 }}>
-                    <Ionicons onpress={() => navigation.goBack()} name="arrow-back" size={24} color="black" />
-                    <View
+                    <Ionicons onPress={() => navigation.goBack()} name="arrow-back" size={24} color="black" />
+                    {selectedMessages.length > 0 ? (
+                        <View>
+                            <Text style={{ fontSize: 16, fontWeight: "500" }}>{selectedMessages.length}</Text>
+                        </View>
+                    ) : (
+                        <View
                         style={{
                             flexDirection: "row",
                             alignItems: "center",
@@ -110,8 +118,18 @@ const ChatMessageScreen = () => {
                             fontWeight: 4
                         }}></Text>
                     </View>
+                    )}
+                    
                 </View>
-            }
+            },
+            headerRight: () => selectedMessages > 0 ? (
+                <View>
+                    <Ionicons name="md-arrow-redo-sharp" size={24} color="black" />
+                    <Ionicons name="md-arrow-redo" size={24} color="black" />
+                    <FontAwesome name="star" size={24} color="black" />
+                    <MaterialIcons name="delete" size={24} color="black" />
+                </View>
+            ): null
         });
     }, [recipientData]);
     const formatTime = (time) => {
@@ -130,14 +148,30 @@ const ChatMessageScreen = () => {
         if (!result.canceled) {
             handleSend("image", result.uri);
         }
+    };
+
+    const handleSelectMessage = (message) => {
+        //check if the message is already selected
+        const isSelected = selectedMessages.includes(message._id);
+
+        if(isSelected){
+            setSelectedMessages((previousMessages) => previousMessages.filter((id) => id !== message._id)
+            );
+        }else{
+            setSelectedMessages((previousMessages) => [
+                ...previousMessages,
+                message._id,
+            ]);
+        }
     }
     return (
-        <KeyboardAvoidingView>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F0F0F0"}}>
             <ScrollView>
                 {messages.map((item, index) => {
                     if (item.messageType === "text") {
                         return (
                             <Pressable
+                            onLongPress={() => handleSelectMessage(item)}
                                 key={index}
                                 style={[
                                     item?.denderId?._id === userId
