@@ -88,7 +88,7 @@ const createToken = (userId) => {
     //endpoint to access all the users except the user who is currently logged in
     app.get("/users/:userId", (req,res) => {
         const loggedInUserId = req.params.userId;
-        user.find({_id:{$no: loggedInUSerId}}).then((users) => {
+        User.find({_id:{$ne: loggedInUserId}}).then((users) => {
         }).catch((err) => {
             console.log("Error retrieving users", err);
             res.status(500).json({message:"Error retrieving users"})

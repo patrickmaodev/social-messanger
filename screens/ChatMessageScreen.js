@@ -3,7 +3,6 @@ import React, { useLayoutEffect, useState, useEffect } from 'react'
 import { Image } from 'react-native';
 import { Entypo, Ionicons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import EmojiSelector from 'react-native-emoji-selector';
