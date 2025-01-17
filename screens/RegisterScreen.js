@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
-import { StyleSheet, KeyboardAvoidingView, Text, View, TextInput, Pressable } from 'react-native';
+import { Alert, KeyboardAvoidingView, Text, TextInput, Pressable, View, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios'
+import axios from 'axios';
+import formStyles from '../styles/formStyles';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState('');
@@ -12,146 +13,106 @@ const RegisterScreen = () => {
   const navigation = useNavigation();
 
   const handleRegister = () => {
-  const user = {
-      name:name,
-      email:email,
-      password:password,
-      image:image,
-    }
- // send a POST request API to register user
- axios.post('http://localhost:8000/register',user).then((response)=>{
-  console.log(response);
-  Alert.alert("Registered Successfully" ,
-  "You have been registered Successfully!");
-  setName ("");
-  setEmail ("");
-  setPassword ("");
-  setImage("");
- }).catch((error)=>{
-  Alert.alert("Registration Error","An Error Occured During Registration");
-  console.log('registration failed',error);
- })
-}
+    const user = { name, email, password, image };
+    axios
+      .post('http://192.168.1.3:8000/register', user)
+      .then((response) => {
+        console.log(response);
+        Alert.alert("Registered Successfully", "You have been registered Successfully!");
+        setName("");
+        setEmail("");
+        setPassword("");
+        setImage("");
+      })
+      .catch((error) => {
+        Alert.alert("Registration Error", "An Error Occurred During Registration");
+        console.log('Registration failed', error);
+      });
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: 'white', padding: 10, alignItems: 'center' }}>
-      <Text>Register Page</Text>
-      <KeyboardAvoidingView behavior="padding">
-        <View style={{ marginTop: 100 }}>
-          <Text
-            style={{
-              color: '#4A55A2',
-              fontSize: 17,
-              fontWeight: 600,
-              textAlign: 'center',
-            }}
-          >
-            Sign In
-          </Text>
-          <Text
-            style={{
-              marginTop: 15,
-              fontSize: 17,
-              fontWeight: 600,
-              textAlign: 'center',
-            }}
-          >
-            Sign In To Account
-          </Text>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={formStyles.container}>
+        <KeyboardAvoidingView>
+          <View style={formStyles.header}>
+            <Text style={formStyles.title}>Sign Up</Text>
+            <Text style={formStyles.subtitle}>Create a New Account</Text>
+          </View>
+        </KeyboardAvoidingView>
+
+        <View style={formStyles.inputContainer}>
+          <Text style={formStyles.label}>Name</Text>
+          <View style={formStyles.inputWrapper}>
+            <Icon name="person-outline" size={20} color="#4A55A2" style={formStyles.icon} />
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={formStyles.input}
+              placeholderTextColor="gray"
+              placeholder="Enter your name"
+            />
+          </View>
         </View>
-      </KeyboardAvoidingView>
 
-      <View style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: 'gray' }}>Name</Text>
-        <TextInput
-          value={name}
-          onChangeText={(text) => setName(text)}
-          style={{
-            fontSize: name ? 18 : 16,
-            borderBottomColor: 'gray',
-            borderBottomWidth: 1,
-            marginVertical: 10,
-            width: 300,
-          }}
-          placeholderTextColor={'black'}
-          placeholder="Enter your name"
-        />
+        <View style={formStyles.inputContainer}>
+          <Text style={formStyles.label}>Email</Text>
+          <View style={formStyles.inputWrapper}>
+            <Icon name="mail-outline" size={20} color="#4A55A2" style={formStyles.icon} />
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              style={formStyles.input}
+              placeholderTextColor="gray"
+              placeholder="Enter your email"
+            />
+          </View>
+        </View>
+
+        <View style={formStyles.inputContainer}>
+          <Text style={formStyles.label}>Password</Text>
+          <View style={formStyles.inputWrapper}>
+            <Icon name="lock-closed-outline" size={20} color="#4A55A2" style={formStyles.icon} />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+              style={formStyles.input}
+              placeholderTextColor="gray"
+              placeholder="Enter your password"
+            />
+          </View>
+        </View>
+
+        <View style={formStyles.inputContainer}>
+          <Text style={formStyles.label}>Image URL</Text>
+          <View style={formStyles.inputWrapper}>
+            <Icon name="image-outline" size={20} color="#4A55A2" style={formStyles.icon} />
+            <TextInput
+              value={image}
+              onChangeText={setImage}
+              style={formStyles.input}
+              placeholderTextColor="gray"
+              placeholder="Enter image URL"
+            />
+          </View>
+        </View>
+
+        <Pressable onPress={handleRegister} style={formStyles.button}>
+          <Text style={formStyles.buttonText}>Register</Text>
+        </Pressable>
+
+        <Pressable onPress={() => navigation.goBack()} style={formStyles.link}>
+          <Text style={{ flexDirection: 'row' }}>
+            Already have an Account?{' '}
+            <Text style={[formStyles.linkText, { textDecorationLine: 'underline' }]}>
+              Sign In
+            </Text>
+          </Text>
+        </Pressable>
+        
       </View>
-
-      <View style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: 'gray' }}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={(text) => setEmail(text)}
-          style={{
-            fontSize: email ? 18 : 16,
-            borderBottomColor: 'gray',
-            borderBottomWidth: 1,
-            marginVertical: 10,
-            width: 300,
-          }}
-          placeholderTextColor={'black'}
-          placeholder="Enter your email"
-        />
-      </View>
-
-      <View style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: 'gray' }}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-          secureTextEntry={true}
-          style={{
-            fontSize: password ? 18 : 16,
-            borderBottomColor: 'gray',
-            borderBottomWidth: 1,
-            marginVertical: 10,
-            width: 300,
-          }}
-          placeholderTextColor={'black'}
-          placeholder="Enter your password"
-        />
-      </View>
-
-      <View style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: 'gray' }}>Image</Text>
-        <TextInput
-          value={image}
-          onChangeText={(text) => setImage(text)}
-          style={{
-            fontSize: password ? 18 : 16,
-            borderBottomColor: 'gray',
-            borderBottomWidth: 1,
-            marginVertical: 10,
-            width: 300,
-          }}
-          placeholderTextColor={'black'}
-          placeholder="Image"
-        />
-      </View>
-
-      <Pressable
-      onPress={handleRegister}
-        style={{
-          borderRadius: 6,
-          width: 200,
-          backgroundColor: '#4A55A2',
-          padding: 15,
-          marginTop: 15,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-      >
-        <Text style={{ textAlign: 'center', fontSize: 16, color: 'white', fontWeight: 'bold' }}>Register</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 15 }}>
-        <Text style={{ textAlign: 'center', color: 'gray', fontSize: 16 }}>
-          Already have an Account? Sign In
-        </Text>
-      </Pressable>
-    </View>
+    </ScrollView>
   );
 };
 
 export default RegisterScreen;
-
-const styles = StyleSheet.create({});

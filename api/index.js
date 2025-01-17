@@ -30,6 +30,7 @@ app.listen(port, () => {
 
 const User = require("./models/user");
 const Message = require("./models/message");
+const FriendRequest = require("./models/friendRequest");
 
 //endpoint for registration of User
 app.post('/register',(req,res)=>{
@@ -86,45 +87,117 @@ const createToken = (userId) => {
     });
 
     //endpoint to access all the users except the user who is currently logged in
-    app.get("/users/:userId", (req,res) => {
+    app.get("/users/:userId", (req, res) => {
         const loggedInUserId = req.params.userId;
-        User.find({_id:{$ne: loggedInUserId}}).then((users) => {
-        }).catch((err) => {
+      
+        User.find({ _id: { $ne: loggedInUserId } })
+          .then((users) => {
+            res.json(users);
+          })
+          .catch((err) => {
             console.log("Error retrieving users", err);
-            res.status(500).json({message:"Error retrieving users"})
-        })
-    });
+            res.status(500).json({ message: "Error retrieving users" });
+          });
+      });
 
-    //endpoint to send the request to user
-    app.post("/friend-request", async (req, res) => {
-        const { currentUserId, selectedUserId } = req.body;
+    app.get('/friends/:userId', async (req, res) => {
+        const { userId } = req.params;
+    
         try {
-            //update the recipient friend request []
-            await User.findByIdAndUpdate(selectedUserId, {
-                $push:{friendRequests : currentUserId },
-            });
-            //update the sender sent friend request []
-            await User.findByIdAndUpdate(currentUserId, {
-                $push: {sentFriendRequests, selectedUserId },
-            });
-            res.sendStatus(200);
-        } catch(error){
-            res.sendStatus(500);
+            const sentRequests = await FriendRequest.find({
+                senderId: userId,
+                status: 'accepted',
+            }).populate('receiverId', 'name email image');
+    
+            const receivedRequests = await FriendRequest.find({
+                receiverId: userId,
+                status: 'accepted',
+            }).populate('senderId', 'name email image');
+    
+            const friends = [
+                ...sentRequests.map((r) => r.receiverId),
+                ...receivedRequests.map((r) => r.senderId),
+            ];
+    
+            const pendingRequests = await FriendRequest.find({
+                receiverId: userId,
+                status: 'pending',
+            }).populate('senderId', 'name email image');
+    
+            return res.json({ friends, pendingRequests });
+        } catch (error) {
+            console.error('Error retrieving friends:', error);
+            return res.status(500).json({ message: 'Internal server error' });
         }
     });
+
+    app.post('/friend-request', async (req, res) => {
+        const { currentUserId, selectedUserId } = req.body;
+    
+        try {
+            // Check if a friend request already exists
+            let request = await FriendRequest.findOne({
+                senderId: currentUserId,
+                receiverId: selectedUserId,
+            });
+    
+            if (request) {
+                if (request.status === 'pending') {
+                    return res.status(200).json({ 
+                        message: 'Friend request already sent',
+                        selectedUserId,
+                        requestStatus: 'pending'
+                    });
+                }
+                if (request.status === 'accepted') {
+                    return res.status(200).json({ 
+                        message: 'You are already friends',
+                        selectedUserId,
+                        requestStatus: 'accepted'
+                    });
+                }
+            }
+    
+            // Create a new friend request
+            request = new FriendRequest({
+                senderId: currentUserId,
+                receiverId: selectedUserId,
+                status: 'pending',
+            });
+            await request.save();
+    
+            // Return the updated status
+            return res.status(201).json({ 
+                message: 'Friend request sent',
+                selectedUserId,
+                requestStatus: 'pending'
+            });
+    
+        } catch (error) {
+            console.error('Error while sending friend request:', error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    });
+    
 
     //endpoint to show end point request of user
     app.get("/friend-request/:userId", async (req, res) => {
-        try{
-            const userId = req.params;
-            //fetch user document based on userId
-            const user = await User.findById(userId).populate("friendsRequests", "name", "email", "image").lean();
+        try {
+            const userId = req.params.userId;
+            
+            const user = await User.findById(userId)
+                .populate("friendRequests", "name email image")
+                .lean();
+
             const friendRequests = user.friendRequests;
-        }catch(error){
+            console.log(friendRequests);
+           
+            res.status(200).json({ friendRequests });
+        } catch (error) {
             console.log(error);
-            res.status(500).json({messsage: "Internal Server Error"})
+            res.status(500).json({ message: "Internal Server Error" });
         }
-    })
+    });
  
     //end point to accept a friend request of a person
     app.post("/friend-request/accept", async(req, res) => {
@@ -162,7 +235,7 @@ const createToken = (userId) => {
 
         try {
             const {userId} = req.params;
-            const user = await User.findbyId(userId).populate(
+            const user = await User.findById(userId).populate(
                 "friends",
                 "name email image"
             )
@@ -213,10 +286,11 @@ const createToken = (userId) => {
             res.status(500).json({ error: "Internal Server Error"});
         }
     })
+
     //endpoint to get the user details to design the chat header
     app.get('/user/userId', async(req, res) => {
         try{
-            const {userId} = rq.params;
+            const {userId} = req.params;
 
             //fetch user data from user id
             const recipientId = await User.fimdById(userId);
@@ -238,6 +312,8 @@ const createToken = (userId) => {
                     { senderId: senderId, recipientId: recipientId },
                 ],
             }).populate("senderId","_id name");
+
+            res.status(200).json(messages);
 
         }catch(error){
             console.log(error);

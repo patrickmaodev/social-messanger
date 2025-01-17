@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -25,19 +25,19 @@ const StackNavigator = () => {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{headerShown:false}}/>
+          options={{headerShown:true}}/>
         <Stack.Screen
           name="Friends"
           component={FriendScreen}
-          options={{headerShown:false}}/>
+          options={{headerShown:true}}/>
         <Stack.Screen
           name="Chats"
           component={ChatScreen}
-          options={{headerShown:false}}/>
+          options={{headerShown:true}}/>
         <Stack.Screen
           name="Messages"
           component={ChatMessageScreen}
-          options={{headerShown:false}}/>
+          options={{headerShown:true}}/>
       </Stack.Navigator>
     </NavigationContainer>
   )

@@ -24,7 +24,7 @@ const ChatMessageScreen = () => {
     };
     const fetchMessages = async () => {
         try {
-            const response = await fetch(`http://localhost:8000/${userId}/${recipientId}`);
+            const response = await fetch(`http://192.168.1.3:8000/${userId}/${recipientId}`);
             const data = await response.jmson();
             if (response.ok) {
                 setMessages(data)
@@ -42,7 +42,7 @@ const ChatMessageScreen = () => {
     useEffect(() => {
         const fetchRecipientData = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/user/${recipientId}`);
+                const response = await fetch(`http://192.168.1.3:8000/user/${recipientId}`);
                 const data = response.json();
                 setRecipientData(data);
             } catch (error) {
@@ -69,7 +69,7 @@ const ChatMessageScreen = () => {
                 formData.append("messageType", "text");
                 formData.append("messageText", messsage);
             }
-            const response = await fetch("http://localhost:8000/messages", {
+            const response = await fetch("http://192.168.1.3:8000/messages", {
                 method: "POST",
                 body: formData
             })

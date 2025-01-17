@@ -6,7 +6,7 @@ const User = ({item}) => {
     const [requestSent, setRequestSent] = useState(false);
     const sendFriendRequest = async(currentUserId, selectedUserId) => {
         try{
-            const response = await fetch("http://localhost:8000/friend-request", {
+            const response = await fetch("http://192.168.1.3:8000/friend-request", {
                 method: "post",
                 headers: {
                     "Content-Type": "application/json",

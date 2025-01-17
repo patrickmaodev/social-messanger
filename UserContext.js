@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import  { createContext, useState } from 'react';
 
 const UserType = createContext();
@@ -12,4 +12,4 @@ const UserContext = ({children}) => {
   )
 }
 
-export {UserType, UserContext} 
+export {UserType, UserContext}

@@ -8,7 +8,7 @@ const FriendRequests = (item, friendRequests, setFriendRequests) => {
     const { userId, setUserId } = useContext(UserType);
     const acceptRequest = async (friendRequestId) => {
         try {
-             const response = await fetch("http://localhost:8000/friend-request/accept",{
+             const response = await fetch("http://192.168.1.3:8000/friend-request/accept",{
                 method: "POST",
                 headers: {
                     "ContentType": "application/json"
