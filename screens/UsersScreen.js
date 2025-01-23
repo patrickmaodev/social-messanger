@@ -1,54 +1,21 @@
 import React, { useContext, useLayoutEffect, useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { UserType } from '../UserContext';
-import { verifyToken, decodeJWT } from '../constants/config';
+import { UserContext } from '../contexts/UserContext';
 
-const HomeScreen = () => {
+const UsersScreen = () => {
+  const { user, authToken } = useContext(UserContext);
   const navigation = useNavigation();
-  const { userId, setUserId } = useContext(UserType);
   const [users, setUsers] = useState([]);
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: "",
-      headerLeft: () => (
-        <Text style={{ fontSize: 16, fontWeight: "bold" }}>Messenger Chat</Text>
-      ),
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons onPress={() => navigation.navigate("Chats")} name="chatbox-ellipses-outline" size={24} color="black" />
-          <MaterialIcons onPress={() => navigation.navigate("Friends")} name="people-outline" size={24} color="black" />
-        </View>
-      )
-    });
-  }, [navigation]);
+  const userId = user.userId
 
   useEffect(() => {
     const checkTokenAndFetchUsers = async () => {
-        const token = await AsyncStorage.getItem("authToken");
-        console.log("Retrieved Token:", token);
-
-        const { isValid } = verifyToken(token);
-        if (!isValid) {
-            await AsyncStorage.removeItem("authToken");
-            navigation.replace("Login");
-            return;
-        }
-
-        const decodedToken = decodeJWT(token);
-        console.log("Decoded token:", decodedToken);
-
-        const userId = decodedToken.userId;
-        setUserId(userId);
-
         axios
             .get(`http://192.168.1.3:8000/users/${userId}`)
             .then((response) => {
@@ -71,14 +38,12 @@ const HomeScreen = () => {
     };
 
     checkTokenAndFetchUsers();
-}, [navigation, setUserId]);
+}, [navigation]);
 
 
   const handleSendRequest = async (selectedUserId) => {
     try {
-        const token = await AsyncStorage.getItem("authToken");
-        const decodedToken = decodeJWT(token);
-        const currentUserId = decodedToken.userId;
+        const currentUserId = user.userId;
 
         const response = await axios.post("http://192.168.1.3:8000/friend-request", {
             currentUserId,
@@ -124,13 +89,8 @@ const HomeScreen = () => {
     }
 };
 
-
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Welcome to Swift Chat</Text>
-      </View>
-
       <View style={styles.userListContainer}>
         {users.length > 0 ? (
           users.map((user, index) => {
@@ -171,7 +131,7 @@ const HomeScreen = () => {
   );
 };
 
-export default HomeScreen;
+export default UsersScreen;
 
 const styles = StyleSheet.create({
   container: {

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, Pressable } from 'react-native'
 import React, { useContext } from 'react'
-import { UserType } from '../UserContext';
+// import { UserType } from '../UserContext';
 import { useNavigation } from '@react-navigation/native';
 
 const FriendRequests = (item, friendRequests, setFriendRequests) => {

@@ -101,7 +101,7 @@ const RegisterScreen = () => {
           <Text style={formStyles.buttonText}>Register</Text>
         </Pressable>
 
-        <Pressable onPress={() => navigation.goBack()} style={formStyles.link}>
+        <Pressable onPress={() => navigation.navigate("Login")} style={formStyles.link}>
           <Text style={{ flexDirection: 'row' }}>
             Already have an Account?{' '}
             <Text style={[formStyles.linkText, { textDecorationLine: 'underline' }]}>

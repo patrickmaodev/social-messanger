@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Alert, Pressable, KeyboardAvoidingView, Text, TextInput, View, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import formStyles from '../styles/formStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { UserContext } from '../contexts/UserContext';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
+  const { login }  = useContext(UserContext);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
         const token = await AsyncStorage.getItem("authToken");
         if (token) {
-          navigation.replace("Home");
+          navigation.navigate("Chats");
         } else {
           console.log("User not logged in");
         }
@@ -33,17 +35,19 @@ const LoginScreen = () => {
     axios
       .post("http://192.168.1.3:8000/login", user)
       .then((response) => {
-        const token = response.data.token;
-        console.log("token from response is", token);
+        const { token, user: userData } = response.data;
+  
+        login(userData, token);
         AsyncStorage.setItem("authToken", token);
-        navigation.replace("Home");
+        AsyncStorage.setItem("user", JSON.stringify(userData));
+
+        navigation.navigate("Chats");
       })
       .catch((error) => {
-        Alert.alert("Login Error", "Invalid email or password");
-        console.log("Login Error", error);
+        Alert.alert("Login Error", error.response?.data?.message || "An error occurred");
       });
   };
-
+  
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={formStyles.container}>
@@ -87,7 +91,7 @@ const LoginScreen = () => {
           <Text style={formStyles.buttonText}>Login</Text>
         </Pressable>
 
-        <Pressable onPress={() => navigation.goBack()} style={formStyles.link}>
+        <Pressable onPress={() => navigation.navigate("Register")} style={formStyles.link}>
           <Text style={{ flexDirection: 'row' }}>
             Don't have an Account?{' '}
             <Text style={[formStyles.linkText, { textDecorationLine: 'underline' }]}>

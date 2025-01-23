@@ -78,7 +78,7 @@ const createToken = (userId) => {
     
                 // create and send a token
                 const token = createToken(user._id);
-                res.status(200).json({ token });
+                res.status(200).json({ token, user: { userId: user._id, name: user.name, email: user.email} });
             })
             .catch(error => {
                 console.log("Error in finding the user", error);
@@ -86,8 +86,36 @@ const createToken = (userId) => {
             });
     });
 
+    //endpoint to access all the users except the user who is currently logged in and friends
+    app.get("/users/:userId", async (req, res) => {
+        const loggedInUserId = req.params.userId;
+      
+        try {
+          // Find friend relationships where the current user is involved and the status is 'accepted'
+          const friendRequests = await FriendRequest.find({
+            $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
+            status: "accepted",
+          });
+      
+          // Extract friend IDs
+          const friendIds = friendRequests.map((request) =>
+            request.senderId.toString() === loggedInUserId ? request.receiverId : request.senderId
+          );
+      
+          // Exclude the logged-in user and their friends
+          const users = await User.find({
+            _id: { $nin: [loggedInUserId, ...friendIds] },
+          });
+      
+          res.json(users);
+        } catch (err) {
+          console.error("Error retrieving users", err);
+          res.status(500).json({ message: "Error retrieving users" });
+        }
+      });
+
     //endpoint to access all the users except the user who is currently logged in
-    app.get("/users/:userId", (req, res) => {
+    app.get("/all-users/:userId", (req, res) => {
         const loggedInUserId = req.params.userId;
       
         User.find({ _id: { $ne: loggedInUserId } })
@@ -181,20 +209,75 @@ const createToken = (userId) => {
     
 
     //endpoint to show end point request of user
-    app.get("/friend-request/:userId", async (req, res) => {
+    app.get("/user-friend-request/:userId", async (req, res) => {
         try {
             const userId = req.params.userId;
-            
-            const user = await User.findById(userId)
-                .populate("friendRequests", "name email image")
-                .lean();
-
-            const friendRequests = user.friendRequests;
-            console.log(friendRequests);
-           
-            res.status(200).json({ friendRequests });
+    
+            // Find friend requests where the user is the receiver and the status is 'pending'
+            const friendRequests = await FriendRequest.find({
+                receiverId: userId,
+                status: "pending",
+            }).populate("senderId", "name email image");
+    
+            // Format the friend requests
+            const formattedRequests = friendRequests.map((request) => ({
+                requestId: request._id,
+                senderId: request.senderId._id,
+                name: request.senderId.name,
+                email: request.senderId.email,
+                image: request.senderId.image,
+            }));
+    
+            res.status(200).json({ friendRequests: formattedRequests });
         } catch (error) {
-            console.log(error);
+            console.error("Error retrieving friend requests:", error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    });
+
+
+    app.get("/friend-requests/:userId", async (req, res) => {
+        try {
+            const userId = req.params.userId;
+    
+            // Find friend requests sent by the current user
+            const sentRequests = await FriendRequest.find({
+                senderId: userId,
+            }).populate("receiverId", "name email image");
+    
+            // Find friend requests received by the current user
+            const receivedRequests = await FriendRequest.find({
+                receiverId: userId,
+            }).populate("senderId", "name email image");
+    
+            // Format the sent requests
+            const formattedSentRequests = sentRequests.map((request) => ({
+                requestId: request._id,
+                type: "sent",
+                receiverId: request.receiverId._id,
+                name: request.receiverId.name,
+                email: request.receiverId.email,
+                image: request.receiverId.image,
+                status: request.status,
+            }));
+    
+            // Format the received requests
+            const formattedReceivedRequests = receivedRequests.map((request) => ({
+                requestId: request._id,
+                type: "received",
+                senderId: request.senderId._id,
+                name: request.senderId.name,
+                email: request.senderId.email,
+                image: request.senderId.image,
+                status: request.status,
+            }));
+    
+            res.status(200).json({
+                sentRequests: formattedSentRequests,
+                receivedRequests: formattedReceivedRequests,
+            });
+        } catch (error) {
+            console.error("Error retrieving friend requests:", error);
             res.status(500).json({ message: "Internal Server Error" });
         }
     });
@@ -288,12 +371,12 @@ const createToken = (userId) => {
     })
 
     //endpoint to get the user details to design the chat header
-    app.get('/user/userId', async(req, res) => {
+    app.get('/user/:userId', async(req, res) => {
         try{
             const {userId} = req.params;
 
             //fetch user data from user id
-            const recipientId = await User.fimdById(userId);
+            const recipientId = await User.findById(userId);
             res.json(recipientId)
         }catch(error){
             console.log(error);
@@ -304,7 +387,7 @@ const createToken = (userId) => {
     //endpoint to fetch the messages between two user in chart-room
     app.get("/messages/:senderId/:recipientId", async(req, res) => {
         try{
-            const {senderId, recipientId} = req.psrsms;
+            const {senderId, recipientId} = req.params;
 
             const messages = await Message.find({
                 $or: [
@@ -334,5 +417,30 @@ const createToken = (userId) => {
 
         } catch(error){
             res.status.json("Internal Server Error");
+        }
+
+    });
+
+    // Endpoint to fetch the current logged-in user's chats
+    app.get('/chats/:userId', async (req, res) => {
+        try {
+            const { userId } = req.params;
+
+            // Find all messages where the user is either the sender or recipient
+            const messages = await Message.find({
+                $or: [
+                    { senderId: userId },
+                    { recipientId: userId }
+                ]
+            }).populate('senderId', 'name email image')
+            .populate('recipientId', 'name email image')
+            .sort({ timestamp: 1 });
+
+            console.log(messages)
+
+            res.status(200).json({ messages });
+        } catch (err) {
+            console.error("Error fetching chats:", err);
+            res.status(500).json({ message: "Internal Server Error" });
         }
     });

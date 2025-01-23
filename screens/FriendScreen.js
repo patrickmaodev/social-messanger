@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text } from 'react-native';
 import axios from 'axios';
-import { UserType } from '../UserContext';
+// import { UserType } from '../UserContext';
 import FriendRequests from '../components/FriendRequests';
 
 const FriendScreen = () => {
