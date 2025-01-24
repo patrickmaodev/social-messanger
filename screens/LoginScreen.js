@@ -18,7 +18,7 @@ const LoginScreen = () => {
       try {
         const token = await AsyncStorage.getItem("authToken");
         if (token) {
-          navigation.navigate("Chats");
+          navigation.navigate("Home");
         } else {
           console.log("User not logged in");
         }
@@ -41,7 +41,7 @@ const LoginScreen = () => {
         AsyncStorage.setItem("authToken", token);
         AsyncStorage.setItem("user", JSON.stringify(userData));
 
-        navigation.navigate("Chats");
+        navigation.navigate("Home");
       })
       .catch((error) => {
         Alert.alert("Login Error", error.response?.data?.message || "An error occurred");

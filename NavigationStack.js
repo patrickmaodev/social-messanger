@@ -9,6 +9,8 @@ import ChatMessageScreen from './screens/ChatMessageScreen';
 import LoadingScreen from './components/LoadingScreen';
 import UsersScreen from './screens/UsersScreen';
 import TabNavigator from './components/TabNavigator';
+import RequestingScreen from './screens/RequestingScreen';
+import RequestedScreen from './screens/RequestedScreen';
 
 const NavigationStack = () => {
   const Stack = createNativeStackNavigator();
@@ -26,6 +28,8 @@ const NavigationStack = () => {
             <Stack.Screen name="Friend" component={FriendScreen} />
             <Stack.Screen name="Messages" component={ChatMessageScreen} />
             <Stack.Screen name="Users" component={UsersScreen} />
+            <Stack.Screen name="Requesting" component={RequestingScreen} />
+            <Stack.Screen name="Requested" component={RequestedScreen} />
           </>
         ) : (
           <>

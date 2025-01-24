@@ -78,7 +78,7 @@ const createToken = (userId) => {
     
                 // create and send a token
                 const token = createToken(user._id);
-                res.status(200).json({ token, user: { userId: user._id, name: user.name, email: user.email} });
+                res.status(200).json({ token, user: { userId: user._id, name: user.name, email: user.email, image: user.image} });
             })
             .catch(error => {
                 console.log("Error in finding the user", error);
@@ -208,15 +208,42 @@ const createToken = (userId) => {
     });
     
 
-    //endpoint to show end point request of user
-    app.get("/user-friend-request/:userId", async (req, res) => {
+    //endpoint to show end point request where the user is the sender
+    app.get("/requesting-friends-requests/:userId", async (req, res) => {
         try {
             const userId = req.params.userId;
     
-            // Find friend requests where the user is the receiver and the status is 'pending'
+            // Find friend requests where the user is the sender and the status is 'pending'
+            const friendRequests = await FriendRequest.find({
+                senderId: userId,
+                status:'pending'
+            }).populate("receiverId", "name email image");
+    
+            // Format the friend requests
+            const formattedRequests = friendRequests.map((request) => ({
+                requestId: request._id,
+                receiverId: request.receiverId._id,
+                name: request.receiverId.name,
+                email: request.receiverId.email,
+                image: request.receiverId.image,
+            }));
+    
+            res.status(200).json({ friendRequests: formattedRequests });
+        } catch (error) {
+            console.error("Error retrieving friend requesting requests:", error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    });
+
+    //endpoint to show end point request where the user is the receiver
+    app.get("/requested-friends-requests/:userId", async (req, res) => {
+        try {
+            const userId = req.params.userId;
+            console.log("we hitten");
+    
+            // Find friend requests where the user is the receiver
             const friendRequests = await FriendRequest.find({
                 receiverId: userId,
-                status: "pending",
             }).populate("senderId", "name email image");
     
             // Format the friend requests
@@ -226,11 +253,12 @@ const createToken = (userId) => {
                 name: request.senderId.name,
                 email: request.senderId.email,
                 image: request.senderId.image,
+                status: request.status
             }));
     
             res.status(200).json({ friendRequests: formattedRequests });
         } catch (error) {
-            console.error("Error retrieving friend requests:", error);
+            console.error("Error retrieving friend requested requests:", error);
             res.status(500).json({ message: "Internal Server Error" });
         }
     });
@@ -282,55 +310,6 @@ const createToken = (userId) => {
         }
     });
  
-    //end point to accept a friend request of a person
-    app.post("/friend-request/accept", async(req, res) => {
-
-        try {
-
-            const {senderId, recipientId} = req.body;
-
-            //retrieve the documents of sender and the recipient
-            const sender = await User.findById(senderId);
-            const recipient = await User.findById(recipientId);
-    
-            sender.friends.push(recipientId);
-            recipient.push(senderId);
-    
-            recipient.friendRequests = recipient.friendRequests.filter(
-                (request) => request.toString() !== senderId.toString()
-            );
-    
-            sender.sentFriendRequests = sender.sentFriendRequests.filter((request) => request.toString() !== recipient.toString());
-    
-            await sender.save();
-            await recipient.save();
-    
-            res.status(200).json({message: "Friend Request accepted Successfully"});
-
-        }catch(error){
-            console.log(error);
-            res.status(500).json({ message: "Internal Server Error"});
-        }
-    });
-
-    //endpoint to access all the friends of the logged in user
-    app.get("/accepted-friends/:userId",async(req,res) => {
-
-        try {
-            const {userId} = req.params;
-            const user = await User.findById(userId).populate(
-                "friends",
-                "name email image"
-            )
-            const acceptedFriends = user.friends;
-            res.json(acceptedFriends)
-
-        }catch(error){
-            console.log(error);
-            res.status(500).json({message:"Internal server error"})
-        }
-    });
-
     const multer = require('multer');
 
     //configure multer for handling file uploads
@@ -443,4 +422,97 @@ const createToken = (userId) => {
             console.error("Error fetching chats:", err);
             res.status(500).json({ message: "Internal Server Error" });
         }
+
+        // Remove friend request
+        app.post('/cancel-friend-request', async (req, res) => {
+            const { currentUserId, selectedUserId } = req.body;
+
+            try {
+                const request = await FriendRequest.findOne({
+                    senderId: currentUserId,
+                    receiverId: selectedUserId,
+                    status: 'pending',
+                });
+
+                if (!request) {
+                    return res.status(404).json({ 
+                        message: 'No pending friend request found to cancel', 
+                        selectedUserId 
+                    });
+                }
+
+                await FriendRequest.deleteOne({ _id: request._id });
+
+                return res.status(200).json({ 
+                    message: 'Friend request canceled successfully', 
+                    selectedUserId 
+                });
+
+            } catch (error) {
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+
+        // Accept friend request
+        app.post('/accept-friend-request', async (req, res) => {
+            const { currentUserId, selectedUserId } = req.body;
+
+            try {
+                const request = await FriendRequest.findOne({
+                    senderId: selectedUserId,
+                    receiverId: currentUserId,
+                    status: 'pending',
+                });
+
+                if (!request) {
+                    return res.status(404).json({
+                        message: 'No pending friend request found to accept',
+                        selectedUserId
+                    });
+                }
+
+                request.status = 'accepted';
+                await request.save();
+
+                return res.status(200).json({
+                    message: 'Friend request accepted successfully',
+                    selectedUserId
+                });
+
+            } catch (error) {
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+
+        // Remove friend
+        app.post('/remove-friend', async (req, res) => {
+            const { currentUserId, selectedUserId } = req.body;
+
+            try {
+                const request = await FriendRequest.findOne({
+                    senderId: selectedUserId,
+                    receiverId: currentUserId,
+                    status: 'accepted',
+                });
+
+                if (!request) {
+                    return res.status(404).json({
+                        message: 'No accepted friend for that option',
+                        selectedUserId
+                    });
+                }
+
+                request.status = 'pending';
+                await request.save();
+
+                return res.status(200).json({
+                    message: 'Friend removed successfully',
+                    selectedUserId
+                });
+
+            } catch (error) {
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+        
     });

@@ -1,14 +1,22 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
 import axios from "axios";
+import { useNavigation } from "@react-navigation/native";
 import { UserContext } from "../contexts/UserContext";
 
 const ProfileScreen = ({ route }) => {
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const {user} = useContext(UserContext);
+  const { user, logout } = useContext(UserContext);
   const userId = user.userId;
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    if (logout()) {
+      Alert.alert("You have successfully logged out!");
+    }
+  };
 
   useEffect(() => {
     const fetchFriendRequests = async () => {
@@ -36,21 +44,37 @@ const ProfileScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+      {/* Profile Image */}
+      <View style={styles.profileImageContainer}>
+        <Image
+          source={user.image ? { uri: user.image } : require("../assets/profile.png")}
+          style={styles.profileImage}
+        />
       </View>
 
       {/* Total Requests Section */}
       <View style={styles.requestSummary}>
-        <TouchableOpacity style={styles.summaryBox}>
+        <TouchableOpacity
+          style={styles.summaryBox}
+          onPress={() => navigation.navigate("Requesting")}
+        >
           <Text style={styles.summaryCount}>{sentRequests.length}</Text>
           <Text style={styles.summaryText}>Requesting</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.summaryBox}>
+
+        <TouchableOpacity
+          style={styles.summaryBox}
+          onPress={() => navigation.navigate("Requested")}
+        >
           <Text style={styles.summaryCount}>{receivedRequests.length}</Text>
           <Text style={styles.summaryText}>Requested</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout()}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -60,58 +84,72 @@ export default ProfileScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     padding: 16,
+    backgroundColor: "#f8f8f8",
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  requestSummary: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
-  summaryBox: {
-    alignItems: "center",
-  },
-  summaryCount: {
     fontSize: 20,
     fontWeight: "bold",
-  },
-  summaryText: {
-    fontSize: 16,
-    color: "#555",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  requestCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 8,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  requestName: {
-    fontSize: 16,
+    color: "#333",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  profileImageContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#ddd",
+  },
+  requestSummary: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 20,
+  },
+  summaryBox: {
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  summaryCount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  summaryText: {
+    fontSize: 16,
+    color: "#555",
+    marginTop: 4,
+  },
+  logoutButton: {
+    marginTop: 20,
+    backgroundColor: "#f44336",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

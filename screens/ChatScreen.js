@@ -49,11 +49,7 @@ const ChatScreen = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerText}>Chats</Text>
-            </View>
-
+            
             {/* Chat List */}
             <View style={styles.chatList}>
                 <FlatList
