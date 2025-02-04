@@ -1,61 +1,80 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { UserContext } from '../contexts/UserContext';
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from '@expo/vector-icons';
 
 const FriendsScreen = () => {
   const { user } = useContext(UserContext);
   const navigation = useNavigation();
   const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchFriends = useCallback(async () => {
+    try {
+      if (!user?.userId) return;
+      setLoading(true);
+      const response = await axios.get(`http://192.168.1.3:8000/friends/${user.userId}`);
+      if (response.status === 200) {
+        setFriends(response.data.friends);
+      }
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.userId]);
 
   useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const userId = user.userId;
-        const response = await axios.get(`http://192.168.1.3:8000/friends/${userId}`);
-
-        if (response.status === 200) {
-          setFriends(response.data.friends);
-        } else {
-          console.error("Failed to fetch friends");
-        }
-      } catch (error) {
-        console.error("Error fetching friends:", error);
-      }
-    };
-
     fetchFriends();
-  }, [navigation, user]);
+  }, [fetchFriends]);
+
+  const removeFriendRequest = async (selectedUserId) => {
+    try {
+      await axios.post("http://192.168.1.3:8000/remove-friend", {
+        currentUserId: user.userId,
+        selectedUserId,
+      });
+      fetchFriends();
+    } catch (error) {
+      Alert.alert("Error", "Unable to remove friend. Please try again.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-
       <View style={styles.friendListContainer}>
         {friends.length > 0 ? (
-          friends.map((friend, index) => (
-            <View key={index} style={styles.friendItem}>
-              <Image source={{ uri: friend.image }} style={styles.friendImage} />
-              <View style={styles.friendInfo}>
-                <Text style={styles.friendName}>{friend.name}</Text>
-                <Text style={styles.friendEmail}>{friend.email}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.chatButton}
-                onPress={() => navigation.navigate('Chat', { friendId: friend._id })}
-              >
+          friends.map((friend) => (
+            <View key={friend._id} style={styles.friendItem}>
+              <TouchableOpacity style={styles.friendContent}>
+                <Image source={{ uri: friend.image }} style={styles.friendImage} />
+                <View style={styles.friendInfo}>
+                  <Text style={styles.friendName}>{friend.name}</Text>
+                  <Text style={styles.friendEmail}>{friend.email}</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Messages', { friendId: friend._id })} style={styles.messageButton}>
                 <Text style={styles.chatButtonText}>Message</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => removeFriendRequest(friend._id)} style={styles.removeIcon}>
+                <Ionicons name="close" size={30} color="#dc3545" />
               </TouchableOpacity>
             </View>
           ))
         ) : (
           <View style={styles.noFriendsContainer}>
             <Text style={styles.noFriendsText}>You have no friends yet.</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => navigation.navigate('Users')}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Users')}>
               <Ionicons name="add" size={24} color="#fff" />
               <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
@@ -74,17 +93,10 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f8f8f8',
   },
-  header: {
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
   },
   friendListContainer: {
     paddingBottom: 20,
@@ -101,6 +113,11 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
+  friendContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   friendImage: {
     width: 60,
     height: 60,
@@ -111,22 +128,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   friendName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   friendEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#757575',
   },
-  chatButton: {
+  messageButton: {
     backgroundColor: '#007bff',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   chatButtonText: {
     color: '#fff',
     fontSize: 14,
+  },
+  removeIcon: {
+    marginLeft: 10,
   },
   noFriendsContainer: {
     alignItems: 'center',

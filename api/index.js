@@ -235,6 +235,40 @@ const createToken = (userId) => {
         }
     });
 
+    app.get("/pending-requests/:userId", async (req, res) => {
+        try {
+            const userId = req.params.userId;
+    
+            const friendRequests = await FriendRequest.find({
+                $or: [{ senderId: userId }, { receiverId: userId }],
+                status: "pending",
+            })
+            .populate("senderId", "name email image")
+            .populate("receiverId", "name email image");
+    
+            const formattedRequests = friendRequests.map((request) => ({
+                requestId: request._id,
+                sender: {
+                    id: request.senderId._id,
+                    name: request.senderId.name,
+                    email: request.senderId.email,
+                    image: request.senderId.image,
+                },
+                receiver: {
+                    id: request.receiverId._id,
+                    name: request.receiverId.name,
+                    email: request.receiverId.email,
+                    image: request.receiverId.image,
+                }
+            }));
+    
+            res.status(200).json({ friendRequests: formattedRequests });
+        } catch (error) {
+            console.error("Error retrieving friend requests:", error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    });
+
     //endpoint to show end point request where the user is the receiver
     app.get("/requested-friends-requests/:userId", async (req, res) => {
         try {

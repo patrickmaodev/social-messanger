@@ -11,6 +11,7 @@ import UsersScreen from './screens/UsersScreen';
 import TabNavigator from './components/TabNavigator';
 import RequestingScreen from './screens/RequestingScreen';
 import RequestedScreen from './screens/RequestedScreen';
+import ChatScreen from './screens/ChatScreen';
 
 const NavigationStack = () => {
   const Stack = createNativeStackNavigator();
@@ -30,6 +31,7 @@ const NavigationStack = () => {
             <Stack.Screen name="Users" component={UsersScreen} />
             <Stack.Screen name="Requesting" component={RequestingScreen} />
             <Stack.Screen name="Requested" component={RequestedScreen} />
+            <Stack.Screen name="Inbox" component={ChatScreen} />
           </>
         ) : (
           <>

@@ -72,24 +72,24 @@ const RequestedScreen = () => {
                 <View style={styles.userTextContainer}>
                   <Text style={styles.userName}>{request.name}</Text>
                   <Text>{request.email}</Text>
-                  <View style={styles.statusContainer}>
+                  </View>
+                  <View style={styles.buttonContainer}>
                     {request.status === 'accepted' ? (
                       <TouchableOpacity
-                        style={styles.statusContainer}
+                        style={styles.friendButton}
                         onPress={() => removeFriendRequest(request.senderId)}
                       >
-                        <Text style={styles.statusText}>Friend</Text>
+                        <Text style={styles.friendButtonText}>Friend</Text>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
-                        style={styles.statusContainer}
+                        style={styles.acceptButton}
                         onPress={() => acceptFriendRequest(request.senderId)}
                       >
-                        <Text style={styles.statusText}>Accept</Text>
+                        <Text style={styles.acceptButtonText}>Accept</Text>
                       </TouchableOpacity>
                     )}
                   </View>
-                </View>
               </View>
             </View>
           ))
@@ -103,15 +103,16 @@ const RequestedScreen = () => {
             <Text style={styles.emptyDescription}>
               You haven’t received any friend requests yet. Start connecting with others now!
             </Text>
-            <TouchableOpacity style={styles.findFriendsButton} onPress={navigateToFindFriends}>
-              <Text style={styles.findFriendsButtonText}>Find Friends</Text>
-            </TouchableOpacity>
+            <View>
+              <TouchableOpacity style={styles.findFriendsButton} onPress={navigateToFindFriends}>
+                <Text style={styles.findFriendsButtonText}>Find Friends</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
     </ScrollView>
   );
-  
   
 };
 
@@ -139,10 +140,11 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between', 
   },
   userImageContainer: {
-    width: 100,
-    height: 100,
+    width: 50,
+    height: 50,
   },
   userImage: {
     width: '100%',
@@ -154,6 +156,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   userTextContainer: {
+    flex: 1,
     marginLeft: 16,
   },
   statusContainer: {
@@ -213,6 +216,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  buttonContainer: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  acceptButton: {
+    backgroundColor: "#ff6b6b",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  acceptButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  friendButton: {
+    backgroundColor: "#ff6b6b",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  friendButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
   },
   
 });

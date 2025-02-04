@@ -63,12 +63,14 @@ const RequestingScreen = () => {
                 <View style={styles.userTextContainer}>
                   <Text style={styles.userName}>{request.name}</Text>
                   <Text>{request.email}</Text>
-                    <TouchableOpacity
-                    style={styles.statusContainer}
+                </View>
+                <View style={styles.cancelButtonContainer}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
                     onPress={() => cancelFriendRequest(request.receiverId)}
-                    >
-                        <Text style={styles.statusText}>Cancel Request</Text>
-                    </TouchableOpacity>
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -119,8 +121,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   userImageContainer: {
-    width: 100,
-    height: 100,
+    width: 50,
+    height: 50,
   },
   userImage: {
     width: "100%",
@@ -134,12 +136,16 @@ const styles = StyleSheet.create({
   userTextContainer: {
     marginLeft: 16,
   },
+  cancelButtonContainer: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
   cancelButton: {
-    marginTop: 8,
     backgroundColor: "#ff6b6b",
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 6,
   },
   cancelButtonText: {
     color: "#fff",

@@ -1,124 +1,123 @@
-import React, { useContext, useLayoutEffect, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useContext, useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { UserContext } from '../contexts/UserContext';
 
 const UsersScreen = () => {
-  const { user, authToken } = useContext(UserContext);
+  const { user } = useContext(UserContext);
   const navigation = useNavigation();
   const [users, setUsers] = useState([]);
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const userId = user.userId
+  const userId = user?.userId;
 
-  useEffect(() => {
-    const checkTokenAndFetchUsers = async () => {
-        axios
-            .get(`http://192.168.1.3:8000/users/${userId}`)
-            .then((response) => {
-                setUsers(response.data);
-                console.log(response.data)
-            })
-            .catch((error) => {
-                console.log("Error retrieving users", error);
-            });
+  const fetchData = async () => {
+    try {
+      const [usersResponse, friendsResponse, pendingResponse] = await Promise.all([
+        axios.get(`http://192.168.1.3:8000/users/${userId}`),
+        axios.get(`http://192.168.1.3:8000/friends/${userId}`),
+        axios.get(`http://192.168.1.3:8000/pending-requests/${userId}`),
+      ]);
 
-        const storedFriends = await AsyncStorage.getItem('friends');
-        if (storedFriends) {
-            setFriends(JSON.parse(storedFriends));
-        }
+      setUsers(usersResponse.data || []);
+      setFriends(friendsResponse.data || []);
+      setPendingRequests(pendingResponse.data.friendRequests || []);
+    } catch (error) {
+      console.error('Error retrieving data:', error);
+    }
+  };
 
-        const storedPendingRequests = await AsyncStorage.getItem('pendingRequests');
-        if (storedPendingRequests) {
-            setPendingRequests(JSON.parse(storedPendingRequests));
-        }
-    };
-
-    checkTokenAndFetchUsers();
-}, [navigation]);
-
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [userId])
+  );
 
   const handleSendRequest = async (selectedUserId) => {
     try {
-        const currentUserId = user.userId;
+      const response = await axios.post("http://192.168.1.3:8000/friend-request", {
+        currentUserId: userId,
+        selectedUserId,
+      });
 
-        const response = await axios.post("http://192.168.1.3:8000/friend-request", {
-            currentUserId,
-            selectedUserId,
-        });
+      if (response.status === 201 || response.data.requestStatus === 'pending') {
+        setPendingRequests((prevRequests) => [
+          ...prevRequests,
+          { sender: { id: userId }, receiver: { id: selectedUserId }, requestStatus: 'pending' },
+        ]);
+      } else if (response.data.requestStatus === 'accepted') {
+        setFriends((prevFriends) => [...prevFriends, { _id: selectedUserId }]);
+      }
 
-        if (response.status === 201) {
-            console.log(`Friend request sent to user: ${selectedUserId}`);
-            setPendingRequests((prevRequests) => {
-                const updatedRequests = [
-                    ...prevRequests,
-                    { senderId: { _id: selectedUserId }, requestStatus: 'pending' },
-                ];
-                AsyncStorage.setItem('pendingRequests', JSON.stringify(updatedRequests));
-                return updatedRequests;
-            });
-        } else if (response.status === 200) {
-            console.log(response.data.message);
-            if (response.data.requestStatus === 'pending') {
-                setPendingRequests((prevRequests) => {
-                    const updatedRequests = [
-                        ...prevRequests,
-                        { senderId: { _id: selectedUserId }, requestStatus: 'pending' },
-                    ];
-                    AsyncStorage.setItem('pendingRequests', JSON.stringify(updatedRequests));
-                    return updatedRequests;
-                });
-            } else if (response.data.requestStatus === 'accepted') {
-                setFriends((prevFriends) => {
-                    const updatedFriends = [
-                        ...prevFriends,
-                        { _id: selectedUserId },
-                    ];
-                    AsyncStorage.setItem('friends', JSON.stringify(updatedFriends));
-                    return updatedFriends;
-                });
-            }
-        } else {
-            console.error("Failed to send friend request");
-        }
+      fetchData();
     } catch (error) {
-        console.error("Error while sending friend request:", error);
+      console.error('Error while sending friend request:', error);
     }
-};
+  };
+
+  const acceptFriendRequest = async (selectedUserId) => {
+    try {
+      const response = await axios.post("http://192.168.1.3:8000/accept-friend-request", {
+        currentUserId: userId,
+        selectedUserId,
+      });
+
+      if (response.status === 200) {
+        setFriends((prevFriends) => [...prevFriends, { _id: selectedUserId }]);
+        setPendingRequests((prevRequests) =>
+          prevRequests.filter((req) => req.sender.id !== selectedUserId)
+        );
+        Alert.alert("Success", "Friend request accepted.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Unable to accept the friend request. Please try again.");
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.userListContainer}>
         {users.length > 0 ? (
-          users.map((user, index) => {
-            const isFriend = friends.some((friend) => friend._id === user._id);
-            const isPending = pendingRequests.some((request) => request.senderId._id === user._id);
-          
+          users.map((u) => {
+            const isFriend = Array.isArray(friends) && friends.some(friend => friend._id === user._id); 
+            const request = pendingRequests.find(
+              (req) => req.sender.id === u._id || req.receiver.id === u._id
+            );
+            const isPending = Boolean(request);
+            const isRequesting = request?.sender.id === userId;
+            const isRequested = request?.receiver.id === userId;
+
             return (
-              <View key={index} style={styles.userItem}>
+              <View key={u._id} style={styles.userItem}>
                 <View style={styles.userInfoContainer}>
-                  <View style={styles.userImageContainer}>
-                    <Image source={{ uri: user.image }} style={styles.userImage} />
-                    {!isFriend && !isPending && (
-                      <TouchableOpacity
-                        onPress={() => handleSendRequest(user._id)}
-                        style={styles.plusButton}
-                      >
-                        <AntDesign name="pluscircle" size={24} color="white" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  <Image source={{ uri: u.image }} style={styles.userImage} />
                   <View style={styles.userTextContainer}>
-                    <Text style={styles.userName}>{user.name}</Text>
-                    <Text>{user.email}</Text>
-                    <View style={styles.statusContainer}>
-                      {isPending && <Text style={styles.statusText}>Requesting...</Text>}
-                    </View>
+                    <Text style={styles.userName}>{u.name}</Text>
+                    <Text>{u.email}</Text>
                   </View>
-                  
+                  <View style={styles.buttonContainer}>
+                    {!isFriend && !isPending ? (
+                      <TouchableOpacity
+                        onPress={() => handleSendRequest(u._id)}
+                        style={styles.addButton}>
+                        <Text style={styles.addButtonText}>Follow</Text>
+                      </TouchableOpacity>
+                    ) : isPending ? (
+                      isRequesting ? (
+                        <TouchableOpacity style={styles.reqButton}>
+                          <Text style={styles.reqButtonText}>Requesting...</Text>
+                        </TouchableOpacity>
+                      ) : isRequested ? (
+                        <TouchableOpacity 
+                          style={styles.reqButton}
+                          onPress={() => acceptFriendRequest(u._id)}
+                        >
+                          <Text style={styles.reqButtonText}>Accept</Text>
+                        </TouchableOpacity>
+                      ) : null
+                    ) : null}
+                  </View>
                 </View>
               </View>
             );
@@ -139,22 +138,13 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f8f8f8',
   },
-  header: {
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
   userListContainer: {
     paddingBottom: 20,
   },
   userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
     padding: 12,
     backgroundColor: '#fff',
@@ -167,44 +157,38 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  userImageContainer: {
-    position: 'relative',
-    width: 100,
-    height: 100,
+    flex: 1,
   },
   userImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
-  plusButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'red',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+  userTextContainer: {
+    flex: 1,
+    marginLeft: 16,
   },
   userName: {
     fontWeight: 'bold',
-    marginTop: 8,
   },
-  userTextContainer: {
-    marginLeft: 16,
+  addButton: {
+    backgroundColor: 'red',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
-  statusContainer: {
-    marginTop: 8,
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
-  statusText: {
-    backgroundColor: '#e0e0e0',
-    color: '#757575',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    textAlign: 'center',
+  reqButton: {
+    backgroundColor: 'darkgrey',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
+  reqButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+  }
 });
