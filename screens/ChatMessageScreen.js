@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, TextInput, Pressable } from 'react-native'
-import React, { useLayoutEffect, useState, useEffect } from 'react'
+import React, { useLayoutEffect, useState, useEffect, useContext } from 'react'
 import { Image } from 'react-native';
 import { Entypo, Ionicons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
@@ -8,8 +8,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import EmojiSelector from 'react-native-emoji-selector';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from "expo-image-picker";
+import { UserContext } from '../contexts/UserContext';
 
 const ChatMessageScreen = () => {
+    const {user} = useContext(UserContext);
     const [showEmojiSelector, setShowEmojiSelector] = useState(false);
     const route = useRoute();
     const [selectedMessages, setSelectedMessages] = useState("");
@@ -22,68 +24,81 @@ const ChatMessageScreen = () => {
     const handleEmojiPress = () => {
         setShowEmojiSelector(!showEmojiSelector);
     };
+
     const fetchMessages = async () => {
+        if (!user || !recipientId) return;
+
+        const senderId = user.userId;
+
         try {
-            const response = await fetch(`http://192.168.1.3:8000/${userId}/${recipientId}`);
-            const data = await response.jmson();
+            const response = await fetch(`http://192.168.1.3:8000/messages/${senderId}/${recipientId}`);
+            const data = await response.json();
             if (response.ok) {
-                setMessages(data)
+                setMessages(data);
             } else {
-                console.log("error showing messages", response.status.message);
+                console.log("Error fetching messages:", response.statusText);
             }
         } catch (error) {
-            console.log("error fetching messages", error);
+            console.log("Error fetching messages:", error);
         }
-    }
-    useEffect(() => {
-        fetchMessages();
+    };
 
-    }, [])
+    useEffect(() => {
+        if (user && recipientId) {
+            fetchMessages();
+        }
+    }, [user, recipientId]);
+
+    // Fetching recipient details
     useEffect(() => {
         const fetchRecipientData = async () => {
             try {
                 const response = await fetch(`http://192.168.1.3:8000/user/${recipientId}`);
-                const data = response.json();
+                const data = await response.json();
                 setRecipientData(data);
             } catch (error) {
-                console.log("error retrieving details");
+                console.log("Error retrieving recipient details:", error);
             }
         }
         fetchRecipientData();
-    }, [])
-    const handleSend = async (messageType, imageUrl) => {
+    }, [recipientId]);
+
+    // Send message function
+    const handleSend = async (messageType, imageUri) => {
         try {
             const formData = new FormData();
-            formData.append("senderId", userId);
-            formData.append("recipientId", id);
+            formData.append("senderId", user.userId);
+            formData.append("recipientId", recipientId);
 
-            //if message type id image or a normal text
             if (messageType === "image") {
                 formData.append("messageType", "image");
                 formData.append("imageFile", {
                     uri: imageUri,
                     name: "image.jpg",
-                    type: "image/jpeg"
+                    type: "image/jpeg",
                 });
             } else {
                 formData.append("messageType", "text");
-                formData.append("messageText", messsage);
+                formData.append("messageText", message);
             }
+
             const response = await fetch("http://192.168.1.3:8000/messages", {
                 method: "POST",
-                body: formData
-            })
+                body: formData,
+            });
+
             if (response.ok) {
                 setMessage("");
-                setSelectedImage("");
-
+                setSelectedImage(null);
                 fetchMessages();
+            } else {
+                console.log("Error sending message:", response.statusText);
             }
         } catch (error) {
-            console.log("error in sending the message", error);
+            console.log("Error in sending the message:", error);
         }
     };
-    console.log("messages", selectedMessages);
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "",
@@ -131,10 +146,11 @@ const ChatMessageScreen = () => {
             ): null
         });
     }, [recipientData]);
-    const formatTime = (time) => {
-        const options = { hour: "numeric", minutes: "numeric" };
-        return new Date(time).toLocaleString("en-US", options);
+
+    const formatTime = (timestamp) => {
+        return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
+
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -150,7 +166,6 @@ const ChatMessageScreen = () => {
     };
 
     const handleSelectMessage = (message) => {
-        //check if the message is already selected
         const isSelected = selectedMessages.includes(message._id);
 
         if(isSelected){
@@ -163,96 +178,50 @@ const ChatMessageScreen = () => {
             ]);
         }
     }
+
     return (
         <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F0F0F0"}}>
             <ScrollView>
                 {messages.map((item, index) => {
-                    if (item.messageType === "text") {
-                        return (
-                            <Pressable
-                            onLongPress={() => handleSelectMessage(item)}
-                                key={index}
-                                style={[
-                                    item?.denderId?._id === userId
-                                        ? {
-                                            alignSelf: "flex-end",
-                                            backgroundColor: "#DCF8C6",
-                                            padding: 8,
-                                            maxWidth: "60%",
-                                            borderRadius: 7,
-                                            margin: 10
-                                        }
-                                        : {
-                                            alignSelf: "flex-start",
-                                            backgroundColor: "white",
-                                            padding: 8,
-                                            margin: 10,
-                                            borderRadius: 7,
-                                            maxWidth: "60%"
-                                        },
-                                ]}>
-                                <Text style={{ fontSize: 13, textAlign: "left" }}>{item?.message}</Text>
-                                <Text
-                                    style={{
-                                        textAlign: "right",
-                                        fontSize: 9,
-                                        color: "gray",
-                                        marginTop: 5,
-                                    }}>{formatTime(item.time)}</Text>
-                            </Pressable>
-                        )
-                    }
-                    if (item.messageType === "image") {
-                        const baseUrl = "/Users/getcore/React-Native-Apps/social-messanger/api/files/";
-                        const imageURl = item.imageUrl;
-                        const filename = imageURl.split("/").pop();
-                        const source = { uri: baseUrl + filename };
-                        return (
-                            <Pressable
-                                key={index}
-                                style={[
-                                    item?.denderId?._id === userId
-                                        ? {
-                                            alignSelf: "flex-end",
-                                            backgroundColor: "#DCF8C6",
-                                            padding: 8,
-                                            maxWidth: "60%",
-                                            borderRadius: 7,
-                                            margin: 10
-                                        }
-                                        : {
-                                            alignSelf: "flex-start",
-                                            backgroundColor: "white",
-                                            padding: 8,
-                                            margin: 10,
-                                            borderRadius: 7,
-                                            maxWidth: "60%"
-                                        },
-                                ]}>
-                                <View>
-                                    <Image
-                                        source={source}
-                                        style={{
-                                            width: 200,
-                                            height: 200,
-                                            borderRadius: 7
-                                        }} />
-                                    <Text
-                                        style={{
-                                            textAlign: "right",
-                                            fontSize: 9,
-                                            color: "gray",
-                                            position: "absolute",
-                                            right: 10,
-                                            bottom: 7,
-                                            color: "gray",
-                                            marginTop: 5
-                                        }}>{formatTime(item?.timeStamp)}</Text>
-                                </View>
+                    const isSender = item?.sender?.id === user.userId;
 
-                            </Pressable>
-                        )
-                    }
+                    return (
+                        <Pressable
+                            onLongPress={() => handleSelectMessage(item)}
+                            key={index}
+                            style={[
+                                isSender
+                                    ? {
+                                        alignSelf: "flex-end",
+                                        backgroundColor: "#DCF8C6",
+                                        padding: 8,
+                                        maxWidth: "60%",
+                                        borderRadius: 7,
+                                        margin: 10
+                                    }
+                                    : {
+                                        alignSelf: "flex-start",
+                                        backgroundColor: "white",
+                                        padding: 8,
+                                        margin: 10,
+                                        borderRadius: 7,
+                                        maxWidth: "60%"
+                                    },
+                            ]}>
+                            <Text style={{ fontSize: 13, textAlign: isSender ? "right" : "left" }}>
+                                {item?.content}
+                            </Text>
+                            <Text
+                                style={{
+                                    textAlign: "right",
+                                    fontSize: 9,
+                                    color: "gray",
+                                    marginTop: 5,
+                                }}>
+                                {formatTime(item.timestamp)}
+                            </Text>
+                        </Pressable>
+                    );
                 })}
             </ScrollView>
             <View style={{

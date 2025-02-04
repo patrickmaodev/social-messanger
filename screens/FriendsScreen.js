@@ -56,14 +56,14 @@ const FriendsScreen = () => {
         {friends.length > 0 ? (
           friends.map((friend) => (
             <View key={friend._id} style={styles.friendItem}>
-              <TouchableOpacity style={styles.friendContent}>
+              <View style={styles.friendContent}>
                 <Image source={{ uri: friend.image }} style={styles.friendImage} />
                 <View style={styles.friendInfo}>
                   <Text style={styles.friendName}>{friend.name}</Text>
                   <Text style={styles.friendEmail}>{friend.email}</Text>
                 </View>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('Messages', { friendId: friend._id })} style={styles.messageButton}>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Messages', { recipientId: friend._id })} style={styles.messageButton}>
                 <Text style={styles.chatButtonText}>Message</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => removeFriendRequest(friend._id)} style={styles.removeIcon}>

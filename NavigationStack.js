@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { UserContext } from './contexts/UserContext';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
-import FriendScreen from './screens/FriendScreen';
 import ChatMessageScreen from './screens/ChatMessageScreen';
 import LoadingScreen from './components/LoadingScreen';
 import UsersScreen from './screens/UsersScreen';
@@ -26,7 +25,6 @@ const NavigationStack = () => {
         {authToken ? (
           <>
             <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
-            <Stack.Screen name="Friend" component={FriendScreen} />
             <Stack.Screen name="Messages" component={ChatMessageScreen} />
             <Stack.Screen name="Users" component={UsersScreen} />
             <Stack.Screen name="Requesting" component={RequestingScreen} />

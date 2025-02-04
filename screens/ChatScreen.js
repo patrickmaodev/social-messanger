@@ -14,20 +14,32 @@ const ChatScreen = ({ route, navigation }) => {
             try {
                 const response = await axios.get(`http://192.168.1.3:8000/chats/${userId}`);
                 const messages = response.data.messages;
-
-                // Format chat data
-                const formattedData = messages.map((msg) => {
-                    const otherUser =
-                        msg.senderId._id === userId ? msg.recipientId : msg.senderId;
-
-                    return {
-                        id: msg._id,
-                        name: otherUser.name,
-                        lastMessage: msg.message || "Image/Attachment",
-                        time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    };
+    
+                const lastMessagesMap = new Map();
+    
+                messages.forEach((msg) => {
+                    const participants = [msg.senderId._id, msg.recipientId._id].sort().join('-');
+    
+                    if (!lastMessagesMap.has(participants) || new Date(msg.timestamp) > new Date(lastMessagesMap.get(participants).timestamp)) {
+                        lastMessagesMap.set(participants, msg);
+                    }
                 });
-
+    
+                const formattedData = Object.values(
+                    messages.reduce((acc, msg) => {
+                        const otherUser = msg.senderId._id === userId ? msg.recipientId : msg.senderId;
+                        acc[otherUser._id] = {
+                            id: msg._id,
+                            name: otherUser.name,
+                            lastMessage: msg.message || "Image/Attachment",
+                            time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            recipientId: otherUser._id,
+                        };
+                        return acc;
+                    }, {})
+                );
+                
+    
                 setChatData(formattedData);
             } catch (error) {
                 console.error("Error fetching chats:", error);
@@ -35,7 +47,7 @@ const ChatScreen = ({ route, navigation }) => {
                 setLoading(false);
             }
         };
-
+    
         fetchChats();
     }, [userId]);
 
@@ -56,13 +68,16 @@ const ChatScreen = ({ route, navigation }) => {
                     data={chatData}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
-                        <Pressable style={styles.chatItem}>
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('Messages', { recipientId: item.recipientId })}
+                            style={styles.chatItem}
+                        >
                             <View style={styles.chatInfo}>
                                 <Text style={styles.chatName}>{item.name}</Text>
                                 <Text style={styles.lastMessage}>{item.lastMessage}</Text>
                             </View>
                             <Text style={styles.chatTime}>{item.time}</Text>
-                        </Pressable>
+                        </TouchableOpacity>
                     )}
                     ListEmptyComponent={
                         <View style={styles.emptyList}>
