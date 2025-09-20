@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { UserContext } from '../contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../constants/config';
 
 const FriendsScreen = () => {
   const { user } = useContext(UserContext);
@@ -15,7 +16,7 @@ const FriendsScreen = () => {
     try {
       if (!user?.userId) return;
       setLoading(true);
-      const response = await axios.get(`http://192.168.1.3:8000/friends/${user.userId}`);
+      const response = await axios.get(`${API_BASE_URL}/friends/friends/${user.userId}/`);
       if (response.status === 200) {
         setFriends(response.data.friends);
       }
@@ -32,7 +33,7 @@ const FriendsScreen = () => {
 
   const removeFriendRequest = async (selectedUserId) => {
     try {
-      await axios.post("http://192.168.1.3:8000/remove-friend", {
+      await axios.post(`${API_BASE_URL}/friends/remove-friend/`, {
         currentUserId: user.userId,
         selectedUserId,
       });
@@ -55,7 +56,7 @@ const FriendsScreen = () => {
       <View style={styles.friendListContainer}>
         {friends.length > 0 ? (
           friends.map((friend) => (
-            <View key={friend._id} style={styles.friendItem}>
+            <View key={friend.id} style={styles.friendItem}>
               <View style={styles.friendContent}>
                 <Image source={{ uri: friend.image }} style={styles.friendImage} />
                 <View style={styles.friendInfo}>
@@ -63,10 +64,10 @@ const FriendsScreen = () => {
                   <Text style={styles.friendEmail}>{friend.email}</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate('Messages', { recipientId: friend._id })} style={styles.messageButton}>
+              <TouchableOpacity onPress={() => navigation.navigate('Messages', { recipientId: friend.id })} style={styles.messageButton}>
                 <Text style={styles.chatButtonText}>Message</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => removeFriendRequest(friend._id)} style={styles.removeIcon}>
+              <TouchableOpacity onPress={() => removeFriendRequest(friend.id)} style={styles.removeIcon}>
                 <Ionicons name="close" size={30} color="#dc3545" />
               </TouchableOpacity>
             </View>

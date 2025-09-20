@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { UserContext } from '../contexts/UserContext';
+import { API_BASE_URL } from '../constants/config';
 
 const ChatScreen = ({ route, navigation }) => {
     const { user, authToken } = useContext(UserContext);
@@ -12,13 +13,13 @@ const ChatScreen = ({ route, navigation }) => {
     useEffect(() => {
         const fetchChats = async () => {
             try {
-                const response = await axios.get(`http://192.168.1.3:8000/chats/${userId}`);
+                const response = await axios.get(`${API_BASE_URL}/messages/chats/${userId}/`);
                 const messages = response.data.messages;
     
                 const lastMessagesMap = new Map();
     
                 messages.forEach((msg) => {
-                    const participants = [msg.senderId._id, msg.recipientId._id].sort().join('-');
+                    const participants = [msg.sender.id, msg.recipient.id].sort().join('-');
     
                     if (!lastMessagesMap.has(participants) || new Date(msg.timestamp) > new Date(lastMessagesMap.get(participants).timestamp)) {
                         lastMessagesMap.set(participants, msg);
@@ -27,13 +28,13 @@ const ChatScreen = ({ route, navigation }) => {
     
                 const formattedData = Object.values(
                     messages.reduce((acc, msg) => {
-                        const otherUser = msg.senderId._id === userId ? msg.recipientId : msg.senderId;
-                        acc[otherUser._id] = {
-                            id: msg._id,
+                        const otherUser = msg.sender.id === userId ? msg.recipient : msg.sender;
+                        acc[otherUser.id] = {
+                            id: msg.id,
                             name: otherUser.name,
                             lastMessage: msg.message || "Image/Attachment",
                             time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                            recipientId: otherUser._id,
+                            recipientId: otherUser.id,
                         };
                         return acc;
                     }, {})

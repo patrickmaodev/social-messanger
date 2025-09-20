@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Alert } fr
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { UserContext } from '../contexts/UserContext';
+import { API_BASE_URL } from '../constants/config';
 
 const UsersScreen = () => {
   const { user } = useContext(UserContext);
@@ -15,13 +16,13 @@ const UsersScreen = () => {
   const fetchData = async () => {
     try {
       const [usersResponse, friendsResponse, pendingResponse] = await Promise.all([
-        axios.get(`http://192.168.1.3:8000/users/${userId}`),
-        axios.get(`http://192.168.1.3:8000/friends/${userId}`),
-        axios.get(`http://192.168.1.3:8000/pending-requests/${userId}`),
+        axios.get(`${API_BASE_URL}/auth/users/${userId}/`),
+        axios.get(`${API_BASE_URL}/friends/friends/${userId}/`),
+        axios.get(`${API_BASE_URL}/friends/requested-friends-requests/${userId}/`),
       ]);
 
       setUsers(usersResponse.data || []);
-      setFriends(friendsResponse.data || []);
+      setFriends(friendsResponse.data.friends || []);
       setPendingRequests(pendingResponse.data.friendRequests || []);
     } catch (error) {
       console.error('Error retrieving data:', error);
@@ -36,7 +37,7 @@ const UsersScreen = () => {
 
   const handleSendRequest = async (selectedUserId) => {
     try {
-      const response = await axios.post("http://192.168.1.3:8000/friend-request", {
+      const response = await axios.post(`${API_BASE_URL}/friends/friend-request/`, {
         currentUserId: userId,
         selectedUserId,
       });
@@ -58,7 +59,7 @@ const UsersScreen = () => {
 
   const acceptFriendRequest = async (selectedUserId) => {
     try {
-      const response = await axios.post("http://192.168.1.3:8000/accept-friend-request", {
+      const response = await axios.post(`${API_BASE_URL}/friends/accept-friend-request/`, {
         currentUserId: userId,
         selectedUserId,
       });
@@ -80,16 +81,16 @@ const UsersScreen = () => {
       <View style={styles.userListContainer}>
         {users.length > 0 ? (
           users.map((u) => {
-            const isFriend = Array.isArray(friends) && friends.some(friend => friend._id === user._id); 
+            const isFriend = Array.isArray(friends) && friends.some(friend => friend.id === u.id); 
             const request = pendingRequests.find(
-              (req) => req.sender.id === u._id || req.receiver.id === u._id
+              (req) => req.senderId === u.id || req.receiverId === u.id
             );
             const isPending = Boolean(request);
-            const isRequesting = request?.sender.id === userId;
-            const isRequested = request?.receiver.id === userId;
+            const isRequesting = request?.senderId === userId;
+            const isRequested = request?.receiverId === userId;
 
             return (
-              <View key={u._id} style={styles.userItem}>
+              <View key={u.id} style={styles.userItem}>
                 <View style={styles.userInfoContainer}>
                   <Image source={{ uri: u.image }} style={styles.userImage} />
                   <View style={styles.userTextContainer}>
@@ -99,7 +100,7 @@ const UsersScreen = () => {
                   <View style={styles.buttonContainer}>
                     {!isFriend && !isPending ? (
                       <TouchableOpacity
-                        onPress={() => handleSendRequest(u._id)}
+                        onPress={() => handleSendRequest(u.id)}
                         style={styles.addButton}>
                         <Text style={styles.addButtonText}>Follow</Text>
                       </TouchableOpacity>
@@ -111,7 +112,7 @@ const UsersScreen = () => {
                       ) : isRequested ? (
                         <TouchableOpacity 
                           style={styles.reqButton}
-                          onPress={() => acceptFriendRequest(u._id)}
+                          onPress={() => acceptFriendRequest(u.id)}
                         >
                           <Text style={styles.reqButtonText}>Accept</Text>
                         </TouchableOpacity>

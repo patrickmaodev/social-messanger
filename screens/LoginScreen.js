@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import formStyles from '../styles/formStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { UserContext } from '../contexts/UserContext';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants/config';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -33,9 +34,9 @@ const LoginScreen = () => {
   const handleLogin = () => {
     const user = { email, password };
     axios
-      .post("http://192.168.1.3:8000/login", user)
+      .post(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, user)
       .then((response) => {
-        const { token, user: userData } = response.data;
+        const { access: token, user: userData } = response.data;
   
         login(userData, token);
         AsyncStorage.setItem("authToken", token);

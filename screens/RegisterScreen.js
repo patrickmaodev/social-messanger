@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import formStyles from '../styles/formStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants/config';
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState('');
@@ -13,9 +14,9 @@ const RegisterScreen = () => {
   const navigation = useNavigation();
 
   const handleRegister = () => {
-    const user = { name, email, password, image };
+    const user = { name, email, password, password_confirm: password, image };
     axios
-      .post('http://192.168.1.3:8000/register', user)
+      .post(`${API_BASE_URL}${API_ENDPOINTS.REGISTER}`, user)
       .then((response) => {
         console.log(response);
         Alert.alert("Registered Successfully", "You have been registered Successfully!");
@@ -23,9 +24,10 @@ const RegisterScreen = () => {
         setEmail("");
         setPassword("");
         setImage("");
+        navigation.navigate("Login");
       })
       .catch((error) => {
-        Alert.alert("Registration Error", "An Error Occurred During Registration");
+        Alert.alert("Registration Error", error.response?.data?.message || "An Error Occurred During Registration");
         console.log('Registration failed', error);
       });
   };

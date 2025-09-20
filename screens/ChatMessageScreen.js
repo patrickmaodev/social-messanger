@@ -9,6 +9,7 @@ import EmojiSelector from 'react-native-emoji-selector';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from "expo-image-picker";
 import { UserContext } from '../contexts/UserContext';
+import { API_BASE_URL } from '../constants/config';
 
 const ChatMessageScreen = () => {
     const {user} = useContext(UserContext);
@@ -31,7 +32,7 @@ const ChatMessageScreen = () => {
         const senderId = user.userId;
 
         try {
-            const response = await fetch(`http://192.168.1.3:8000/messages/${senderId}/${recipientId}`);
+            const response = await fetch(`${API_BASE_URL}/messages/${senderId}/${recipientId}/`);
             const data = await response.json();
             if (response.ok) {
                 setMessages(data);
@@ -52,13 +53,13 @@ const ChatMessageScreen = () => {
     // Fetching recipient details
     useEffect(() => {
         const fetchRecipientData = async () => {
-            try {
-                const response = await fetch(`http://192.168.1.3:8000/user/${recipientId}`);
-                const data = await response.json();
-                setRecipientData(data);
-            } catch (error) {
-                console.log("Error retrieving recipient details:", error);
-            }
+        try {
+            const response = await fetch(`${API_BASE_URL}/messages/user/${recipientId}/`);
+            const data = await response.json();
+            setRecipientData(data);
+        } catch (error) {
+            console.log("Error retrieving recipient details:", error);
+        }
         }
         fetchRecipientData();
     }, [recipientId]);
@@ -82,7 +83,7 @@ const ChatMessageScreen = () => {
                 formData.append("messageText", message);
             }
 
-            const response = await fetch("http://192.168.1.3:8000/messages", {
+            const response = await fetch(`${API_BASE_URL}/messages/`, {
                 method: "POST",
                 body: formData,
             });
