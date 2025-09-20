@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -10,25 +8,27 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
+    working_dir: /app/social_messenger
     volumes:
       - .:/app
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - DEBUG=1
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/social_messenger
       - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
     depends_on:
       - db
       - redis

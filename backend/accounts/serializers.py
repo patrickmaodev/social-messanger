@@ -11,10 +11,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'password', 'password_confirm', 'image')
+        fields = ('email', 'full_name', 'password', 'password_confirm', 'profile_picture')
         extra_kwargs = {
             'email': {'required': True},
-            'name': {'required': True},
+            'full_name': {'required': True},
+            'profile_picture': {'required': False},
         }
     
     def validate(self, attrs):
@@ -51,14 +52,14 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'image')
+        fields = ('id', 'email', 'full_name', 'profile_picture')
         read_only_fields = ('id', 'email')
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'image')
+        fields = ('id', 'email', 'full_name', 'profile_picture')
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -70,7 +71,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         # Add custom claims
         token['email'] = user.email
-        token['name'] = user.name
+        token['name'] = user.full_name
         token['user_id'] = user.id
         
         return token

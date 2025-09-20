@@ -16,7 +16,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.1.3']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.1.3', '192.168.1.66']
 
 # Application definition
 INSTALLED_APPS = [
@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'django_filters',
     'accounts',
     'friends',
-    'messages',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -178,6 +178,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://192.168.1.3:3000",
+    "http://192.168.1.66:3000",
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://192.168.1.66:8081",
+    "http://localhost:19000",
+    "http://127.0.0.1:19000",
+    "http://192.168.1.66:19000",
+    "http://localhost:19001",
+    "http://127.0.0.1:19001",
+    "http://192.168.1.66:19001",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

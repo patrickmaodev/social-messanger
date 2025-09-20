@@ -8,9 +8,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('accounts.urls')),
-    path('api/friends/', include('friends.urls')),
-    path('api/messages/', include('messages.urls')),
+    path('api/v1/users/', include('accounts.urls')),
+    path('api/v1/friends/', include('friends.urls')),
+    path('api/v1/messages/', include('messaging.urls')),
 ]
 
 # Serve media files in development
